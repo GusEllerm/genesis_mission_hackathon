@@ -2,6 +2,7 @@ import os
 
 import dotenv
 from globus_compute_sdk import Executor as GlobusExecutor
+from globus_sdk.services.compute.errors import ComputeAPIError
 
 
 def hello_world() -> str:
@@ -20,7 +21,12 @@ def remote_launch(endpoints: dict[str, str]) -> None:
 
             print(f"Attempting function execution on {endpoint}")
             gc_executor.endpoint_id = endpoint_id
-            future = gc_executor.submit(hello_world)
+            try:
+                future = gc_executor.submit(hello_world)
+            except ComputeAPIError as e:
+                print(f"Could not submit job to {endpoint}, error:{e}")
+                continue
+
             try:
                 result = future.result(timeout=120)
                 print(f"Result: {result}")
