@@ -12,6 +12,9 @@ dependencies = [
     "academy-dashboard",
     "globus-compute-endpoint>=4.18.0",
     "python-dotenv>=1.2.4",
+    "langchain>=1.4.4",
+    "rdkit>=2026.9.1",
+    "parsl>=2026.10.5",
 ]
 
 [dependency-groups]
