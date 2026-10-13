@@ -43,11 +43,13 @@ class MolDesignAgent(Agent):
     def __init__(
         self,
         start_molecule: str,
-        reasoning_model: str = "openai/gpt-oss-120b",
-        generation_model: str = "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+        llm_model: str,
+        base_url: str,
+        api_key: str,
     ):
-        self.reasoning_model = reasoning_model
-        self.generation_model = generation_model
+        self.llm_model = llm_model
+        self.base_url = base_url
+        self.api_key = api_key
         self.search_state = SearchState(seed=start_molecule)
         self.molecule_cache: dict[str, float] = {}
 
@@ -63,8 +65,15 @@ class MolDesignAgent(Agent):
         self.pool = ProcessPoolExecutor(max_workers=n_workers)
 
         tools = [tool(self.compute_qed)]
-        self.reasoning_llm = ChatOpenAI(model=self.reasoning_model)
-        self.generation_llm = ChatOpenAI(model=self.generation_model)
+        llm = ChatOpenAI(
+            model=self.llm_model,
+            base_url=self.base_url,
+            api_key=self.api_key,
+            # The hackathon project only has a microsoft allocation on MAG.
+            default_headers={"X-AmSC-MAG-Provider": "microsoft"},
+        )
+        self.reasoning_llm = llm
+        self.generation_llm = llm
         self.tools_by_name = {tool.name: tool for tool in tools}
         self.llm_with_tools = self.generation_llm.bind_tools(tools)
 
@@ -235,15 +244,14 @@ class MolDesignAgent(Agent):
                     asyncio.create_task(tool.ainvoke(tool_call["args"])),
                 )
 
-            done, _ = await asyncio.wait(observations)
+            # gather keeps the order of the tool calls
+            done = await asyncio.gather(*observations, return_exceptions=True)
 
             results = {}
-            for tool_result in zip(state.tool_calls, done, strict=True):
-                tool_call, observation = tool_result
-                try:
-                    results[tool_call["args"]["smiles"]] = await observation
-                except Exception as e:  # noqa: BLE001
-                    results[tool_call["args"]["smiles"]] = str(e)
+            for tool_call, observation in zip(state.tool_calls, done, strict=True):
+                if isinstance(observation, Exception):
+                    observation = str(observation)
+                results[tool_call["args"]["smiles"]] = observation
 
             new_results = state.simulated_molecules | results
 
