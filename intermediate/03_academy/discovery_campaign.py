@@ -4,6 +4,7 @@ import asyncio
 import logging
 import os
 
+import dotenv
 from academy.exchange import HttpExchangeFactory
 from academy.manager import Manager
 from globus_compute_sdk import Executor as GlobusExecutor
@@ -15,7 +16,9 @@ logger = logging.getLogger(__name__)
 
 async def main() -> int:
 
-    executor = GlobusExecutor(endpoint_url=os.environ.get("AURORA_ENDPOINT_ID"))
+    # 1. Update this to match your preferred HPC system
+    dotenv.load_dotenv(dotenv.find_dotenv("settings.env", usecwd=True))
+    executor = GlobusExecutor(endpoint_id=os.environ["AURORA_ENDPOINT_ID"])
 
     async with await Manager.from_exchange_factory(
         factory=HttpExchangeFactory(),
@@ -26,12 +29,18 @@ async def main() -> int:
             "CC1=C(O)N=C(O)N1",
         ]
 
+        # We spawn agents that will process each molecule independently
         agents = []
         for molecule in seeds:
             agents.append(
                 await manager.launch(
                     MolDesignAgent,
                     args=(molecule,),
+                    kwargs={
+                        "llm_model": os.environ["LLM_MODEL"],
+                        "base_url": os.environ["OPENAI_BASE_URL"],
+                        "api_key": os.environ["AMSC_TOKEN"],
+                    },
                 ),
             )
 
