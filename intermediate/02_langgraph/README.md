@@ -16,8 +16,6 @@ OPENAI_BASE_URL=https://mag.genesis.americansciencecloud.org/v1
 AMSC_TOKEN=<your MAG key>
 ```
 
-To make sure that you can connect to the MAG, run `uv run python intermediate/02_langgraph/test_mag.py`.
-
 ## Prompt
 
 Start Claude Code in the repository root. Then give this prompt:

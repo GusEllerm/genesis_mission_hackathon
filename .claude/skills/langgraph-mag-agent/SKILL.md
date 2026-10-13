@@ -34,14 +34,13 @@ def get_llm() -> ChatOpenAI:
 - Read the token with `os.environ["AMSC_TOKEN"]`. Do not use `.get()`. If the key is `None`, ChatOpenAI uses `OPENAI_API_KEY` and sends that key to the MAG.
 - Always send the `X-AmSC-MAG-Provider` header.
 - Make the LLM inside `get_llm()`, not at import time. Then the graph compiles without credentials.
-- Do a smoke test first: `uv run python intermediate/02_langgraph/test_mag.py`.
 
 ## 2. Diagnose MAG errors
 
 | Symptom | Cause | Action |
 |---|---|---|
 | `KeyError: 'AMSC_TOKEN'` | The token is not in `settings.env`. | Tell the user to add `AMSC_TOKEN=<key>` to `settings.env`. Do not ask for the token in chat. Do not put the token in a command line. A hook blocks inline credentials. |
-| `403` with an HTML page "Cloudflare Access" (`is_warp: False`, `mtls_status: NONE`) | An access gate stopped the request before the MAG. The MAG did not examine the token or the model. | Tell the user to run `source utilities/mag_shell_util.sh && amsc --list` in a terminal. If that also fails, the network or computer does not have access. See https://amsc-docs-d762d2.gitlab.io/model-access-gateway/. |
+| `403` with an HTML page "Cloudflare Access" (`is_warp: False`, `mtls_status: NONE`) | An access gate stopped the request before the MAG. The MAG did not examine the token or the model. | Tell the user to run `source utilities/mag_shell_util.sh && mag --list` in a terminal. If that also fails, the network or computer does not have access. See https://amsc-docs-d762d2.gitlab.io/model-access-gateway/. |
 
 ## 3. Get structured output
 
@@ -110,5 +109,4 @@ graph = sm.build_graph()
 ## Reference files
 
 - `intermediate/02_langgraph/similar_molecules.py`: the full graph.
-- `intermediate/02_langgraph/test_mag.py`: the MAG smoke test.
-- `utilities/mag_shell_util.sh`: the MAG test with curl (`amsc --list`).
+- `utilities/mag_shell_util.sh`: the MAG test with curl (`mag --list`).
