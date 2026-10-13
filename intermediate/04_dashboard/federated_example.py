@@ -23,7 +23,7 @@ from globus_compute_sdk import Executor as GlobusExecutor
 async def main(user_agent_id: UUID) -> None:
     """Launch MonitoredAgents across facilities with Globus Compute."""
     executors = {
-        "nersc": GlobusExecutor(endpoint_id="07b73b75-d534-428f-acd8-003b01a166f5"),
+        "nersc": GlobusExecutor(endpoint_id=os.environ["PERLMUTTER_ENDPOINT_ID"]),
         #'anvil': GlobusExecutor(
         #     endpoint_id='5aafb4c1-27b2-40d8-a038-a0277611868f',
         #     user_endpoint_config={'worker_init': 'source ~/setup_env.sh'}),
