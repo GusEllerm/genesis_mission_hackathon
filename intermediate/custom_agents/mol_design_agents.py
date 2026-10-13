@@ -6,89 +6,25 @@ import os
 import sys
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
-from io import StringIO
 from typing import Any, Literal
 
-import numpy as np
 from academy.agent import Agent, action, loop
-from ase.io import read
-from ase.optimize import LBFGSLineSearch
 from langchain.messages import HumanMessage, SystemMessage
 from langchain.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from rdkit import Chem
-from rdkit.Chem import AllChem
-from xtb.ase.calculator import XTB
+from rdkit.Chem import QED
 
 logger = logging.getLogger(__name__)
 
 
-def _generate_initial_xyz(mol_string: str) -> str:
-    """Generate the XYZ coordinates for a molecule.
-
-    Args:
-        mol_string: SMILES string
-
-    Returns:
-        - InChI string for the molecule
-        - XYZ coordinates for the molecule
-    """
-
-    # Generate 3D coordinates for the molecule
-    mol = Chem.MolFromSmiles(mol_string)
+def _compute_qed_sync(smiles: str) -> float:
+    """Compute the QED (drug-likeness) score of a molecule."""
+    mol = Chem.MolFromSmiles(smiles)
     if mol is None:
-        raise ValueError(f"Parse failure for {mol_string}")
-    mol = Chem.AddHs(mol)
-    AllChem.EmbedMolecule(mol, randomSeed=1)
-    AllChem.MMFFOptimizeMolecule(mol)
-
-    # Save geometry as 3D coordinates
-    xyz = f"{mol.GetNumAtoms()}\n"
-    xyz += mol_string + "\n"
-    conf = mol.GetConformer()
-    for i, a in enumerate(mol.GetAtoms()):
-        s = a.GetSymbol()
-        c = conf.GetAtomPosition(i)
-        xyz += f"{s} {c[0]} {c[1]} {c[2]}\n"
-
-    return xyz
-
-
-@dataclass
-class XTBConfig:
-    accuracy: float = 0.05
-    search_fmax: float = 0.02
-    search_steps: int = 250
-
-
-def _compute_energy_sync(config: XTBConfig, smiles: str) -> float:
-    """Run the ionization potential computation."""
-
-    # Make the initial geometry
-    xyz = _generate_initial_xyz(smiles)
-
-    # Make the XTB calculator
-    calc = XTB(accuracy=config.accuracy)
-
-    # Parse the molecule
-    atoms = read(StringIO(xyz), format="xyz")
-
-    # Compute the neutral geometry
-    # Uses QCEngine (https://github.com/MolSSI/QCEngine)
-    # to handle interfaces to XTB
-    atoms.calc = calc
-    dyn = LBFGSLineSearch(atoms, logfile=None)
-    dyn.run(fmax=config.search_fmax, steps=config.search_steps)
-
-    neutral_energy = atoms.get_potential_energy()
-
-    # Compute the energy of the relaxed geometry in charged form
-    charges = np.ones((len(atoms),)) * (1 / len(atoms))
-    atoms.set_initial_charges(charges)
-    charged_energy = atoms.get_potential_energy()
-
-    return charged_energy - neutral_energy
+        raise ValueError(f"Parse failure for {smiles}")
+    return QED.qed(mol)
 
 
 @dataclass
@@ -101,17 +37,15 @@ class SearchState:
     critique: str = ""
 
 
-class XTBSimulationAgent(Agent):
-    """Agent for running XTB to characterize molecules."""
+class MolDesignAgent(Agent):
+    """Agent for searching for molecules with high QED."""
 
     def __init__(
         self,
-        xtb_config: XTBConfig,
         start_molecule: str,
         reasoning_model: str = "openai/gpt-oss-120b",
         generation_model: str = "meta-llama/Llama-4-Scout-17B-16E-Instruct",
     ):
-        self.config = xtb_config
         self.reasoning_model = reasoning_model
         self.generation_model = generation_model
         self.search_state = SearchState(seed=start_molecule)
@@ -128,7 +62,7 @@ class XTBSimulationAgent(Agent):
             )  # Get cores we are assigned to
         self.pool = ProcessPoolExecutor(max_workers=n_workers)
 
-        tools = [tool(self.compute_ionization_energy)]
+        tools = [tool(self.compute_qed)]
         self.reasoning_llm = ChatOpenAI(model=self.reasoning_model)
         self.generation_llm = ChatOpenAI(model=self.generation_model)
         self.tools_by_name = {tool.name: tool for tool in tools}
@@ -137,26 +71,25 @@ class XTBSimulationAgent(Agent):
     async def agent_on_shutdown(self) -> None:
         self.pool.shutdown()
 
-    async def compute_ionization_energy(self, smiles: str) -> float:
-        """Compute the ionization energy for the given molecule.
+    async def compute_qed(self, smiles: str) -> float:
+        """Compute the QED (drug-likeness) score for the given molecule.
 
         Args:
             smiles: SMILES string to evaluate
         Returns:
-            Ionization energy in Ha
+            QED score from 0 to 1, higher is more drug-like
         """
         if smiles in self.molecule_cache:
             return self.molecule_cache[smiles]
 
         loop = asyncio.get_event_loop()
-        ionization_energy = await loop.run_in_executor(
+        qed = await loop.run_in_executor(
             self.pool,
-            _compute_energy_sync,
-            self.config,
+            _compute_qed_sync,
             smiles,
         )
-        self.molecule_cache[smiles] = ionization_energy
-        return ionization_energy
+        self.molecule_cache[smiles] = qed
+        return qed
 
     @loop
     async def conduct_simulation_campaign(
@@ -166,7 +99,7 @@ class XTBSimulationAgent(Agent):
         """Conduct a simulation campaign.
 
         This loop uses an LLM to conduct a search for molecules with high
-        ionizationenergy, using the starting molecule as a seed for the
+        QED (drug-likeness), using the starting molecule as a seed for the
         search space.
         """
 
@@ -190,13 +123,13 @@ class XTBSimulationAgent(Agent):
                             " to the target property, you should always "
                             "consider things like cost and sythesizability. "
                             "Note: the only experiment your lab is capable of "
-                            "running is calculating the ionization energy of "
+                            "running is calculating the QED (drug-likeness) of "
                             "proposed molecules."
                         ),
                     ),
                     HumanMessage(
                         content=(
-                            "Look for molecules with high ionization energy "
+                            "Look for molecules with high QED "
                             f"starting with the molecule {state.seed}"
                         ),
                     ),
@@ -335,7 +268,7 @@ class XTBSimulationAgent(Agent):
                             "You are expert chemist analyzing the results"
                             "of simulations. Synthesize any conclusions from"
                             " the planned computational campaign and the "
-                            "simulation results so far. A -inf result means "
+                            "simulation results so far. An error result means "
                             "the simulation could not be run, likely because "
                             "the SMILES string of the molecule was invalid. "
                             "You should not repeat conclusions that have "
@@ -349,7 +282,7 @@ class XTBSimulationAgent(Agent):
                         content=(
                             f"Plan: {state.plan}\n\n"
                             "Simulation Results:\n"
-                            "Molecule\t\tEnergy\n"
+                            "Molecule\t\tQED\n"
                             f"{results_str}"
                         ),
                     ),
@@ -389,7 +322,7 @@ class XTBSimulationAgent(Agent):
                         content=(
                             f"Plan: {state.plan}\n\n"
                             "Simulation Results:\n"
-                            "Molecule\t\tEnergy\n"
+                            "Molecule\t\tQED\n"
                             f"{results_str}\n\n"
                             "Conclusions:\n"
                             f"\t{conclusions}"
@@ -428,7 +361,7 @@ class XTBSimulationAgent(Agent):
                             "suggested by the plan have been carried out, "
                             "suggest more experiments. Note: the only "
                             "experiment your lab is capable of running is "
-                            "calculating the ionization energy of proposed "
+                            "calculating the QED (drug-likeness) of proposed "
                             "molecules."
                         ),
                     ),
@@ -436,7 +369,7 @@ class XTBSimulationAgent(Agent):
                         content=(
                             f"Plan: {state.plan}\n\n"
                             "Simulation Results:\n"
-                            "Molecule\t\tEnergy\n"
+                            "Molecule\t\tQED\n"
                             f"{results_str}\n\n"
                             "Conclusions:\n"
                             f"\t{conclusions}\n\n"
