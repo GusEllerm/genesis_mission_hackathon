@@ -22,7 +22,7 @@ from wordle import WordleGame
 
 logger = logging.getLogger(__name__)
 
-MODEL = 'claude-haiku-4-5'
+MODEL = 'claude-haiku-5-5'
 
 RULES = (
     'Wordle is a word-guessing game where the target is a hidden 5-letter '

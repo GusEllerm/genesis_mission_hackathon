@@ -41,7 +41,7 @@ class WordleAgent(Agent):
         self,
         peers: list[Handle[WordleAgent]],
     ) -> None:
-        self.model = 'claude-haiku-4-5'
+        self.model = 'claude-haiku-5-5'
         self.peers = peers
         self.insight_dict: dict[AgentId[Any], str] = {}
 
