@@ -4,10 +4,9 @@ This module has a Claude Code skill, `globus-compute-run`. The skill shows Claud
 
 ## Start Claude Code
 
-Start Claude Code in this directory to load the skill at startup. If you start Claude Code from the repository root, the skill loads after Claude reads a file in this directory, or when you run `/add-dir intermediate/01_claude_code`.
+Start Claude Code in the repository root. The skill is in `.claude/skills/globus-compute-run/` and loads at startup.
 
 ```bash
-cd intermediate/01_claude_code
 claude
 ```
 
