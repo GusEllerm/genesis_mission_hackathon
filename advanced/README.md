@@ -7,20 +7,21 @@ In the advanced modules, you build these parts yourself:
 | Module | Pattern | What you learn |
 |---|---|---|
 | [1. Tool calling](1_tool_calling/) | An LLM selects which HPC function to run | How to make a Globus Compute function into an LLM tool |
-| [2. Agent tool calling](2_agent_tool_calling/) | Coming soon | |
+| [2. Agent tool calling](2_agent_tool_calling/) | A coding agent calls HPC tools | How a ready-made agent uses its built-in tools and the hpc-bridge MCP tools |
 | [3. Scaling agents](3_scaling_agents/) | Many LLM agents work on one problem | Three ways to organize agents: independent, peers, and coordinator with sub-agents |
 
 ## Before you start
 
 1. Install this repo. Refer to the [top-level README](../README.md).
 2. For Module 1, you need a Globus Compute endpoint. Refer to [intermediate Module 0](../intermediate/00_endpoint_setup/README.md).
-3. Get your AmSC token for the Model Access Gateway (MAG). Refer to [MAG get started](https://amsc-docs-d762d2.gitlab.io/mag-get-started). Then put the token in your shell:
+3. For Module 2, install Docker.
+4. Get your AmSC token for the Model Access Gateway (MAG). Refer to [MAG get started](https://amsc-docs-d762d2.gitlab.io/mag-get-started). Then put the token in your shell:
 
    ```bash
    export AMSC_TOKEN=<your MAG key>
    ```
 
-All modules use an LLM on the MAG. The MAG has two interfaces, and each module uses one of them:
+Modules 1 and 3 use an LLM on the MAG. The MAG has two interfaces, and each module uses one of them:
 
 | Interface | Used by | Environment variables |
 |---|---|---|
@@ -62,7 +63,21 @@ The script uses the model `gpt-oss-120b`. To use a different model, change `mode
 
 ## 2. Agent tool calling
 
-Coming soon.
+In Module 1, you write the agent loop. In Module 2, a coding agent has the loop already. [Pi](https://pi.dev) with the [Globus Harness](https://github.com/GusEllerm/pi-lab-profile) profile runs in a Docker container. The agent uses its built-in tools (read, edit, bash) and the [hpc-bridge](https://github.com/globus-labs/hpc-bridge) MCP tools to do work on an HPC system.
+
+From the repository root:
+
+```bash
+docker build -t gm-agent advanced/2_agent_tool_calling
+docker run --rm -it --name gm-agent \
+  -e ANTHROPIC_API_KEY \
+  -v "$PWD:/workspace" \
+  -v gm-agent-home:/root/.pi/agent \
+  -v gm-agent-globus:/root/.globus \
+  gm-agent pi
+```
+
+For the model options, the ALCF login, and how to connect to an HPC system, refer to the [Module 2 README](2_agent_tool_calling/README.md).
 
 ## 3. Scaling agents
 
