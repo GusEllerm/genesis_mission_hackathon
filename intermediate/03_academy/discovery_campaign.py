@@ -4,31 +4,21 @@ import asyncio
 import logging
 import os
 
-from academy.exchange import RedisExchangeFactory
+from academy.exchange import HttpExchangeFactory
 from academy.manager import Manager
-from mol_design_agents import XTBConfig, XTBSimulationAgent
-from parsl import Config, HighThroughputExecutor
-from parsl.concurrent import ParslPoolExecutor
-from parsl.providers import LocalProvider
+from globus_compute_sdk import Executor as GlobusExecutor
+
+from intermediate.custom_agents.mol_design_agents import MolDesignAgent
 
 logger = logging.getLogger(__name__)
 
 
 async def main() -> int:
-    config = Config(
-        executors=[
-            HighThroughputExecutor(
-                provider=LocalProvider(
-                    worker_init=(f"cd {os.getcwd()}conda activate ./mol-design;"),
-                ),
-                max_workers_per_node=2,
-            ),
-        ],
-    )
-    executor = ParslPoolExecutor(config)
+
+    executor = GlobusExecutor(endpoint_url=os.environ.get("AURORA_ENDPOINT_ID"))
 
     async with await Manager.from_exchange_factory(
-        factory=RedisExchangeFactory("localhost", 6379),
+        factory=HttpExchangeFactory(),
         executors=executor,
     ) as manager:
         seeds = [
@@ -40,8 +30,8 @@ async def main() -> int:
         for molecule in seeds:
             agents.append(
                 await manager.launch(
-                    XTBSimulationAgent,
-                    args=(XTBConfig(), molecule),
+                    MolDesignAgent,
+                    args=(molecule,),
                 ),
             )
 
