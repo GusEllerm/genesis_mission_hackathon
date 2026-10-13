@@ -3,19 +3,19 @@
 # Usage:
 #   export AMSC_TOKEN=<your key>
 #   source utilities/mag_shell_util.sh
-#   amsc <model> [prompt]          # prompt defaults to "Hello"
-#   amsc --list                    # list available models (or -l)
+#   mag <model> [prompt]          # prompt defaults to "Hello"
+#   mag --list                    # list available models (or -l)
 #
-# The provider header defaults to microsoft. To change it: AMSC_PROVIDER=openai amsc ...
+# The provider header defaults to microsoft. To change it: MAG_PROVIDER=openai mag ...
 #
 # Example:
-#   amsc openai/gpt-oss-120b "What is QED drug-likeness?"
+#   mag openai/gpt-oss-120b "What is QED drug-likeness?"
 #
 # Requires curl and jq. Prints the JSON response.
-amsc() {
+mag() {
   local model="${1}"
   local prompt="${2:-Hello}"
-  local provider="${AMSC_PROVIDER:-microsoft}"
+  local provider="${MAG_PROVIDER:-microsoft}"
 
   if [ -z "$AMSC_TOKEN" ]; then
     echo "Error: AMSC_TOKEN is not set." >&2
