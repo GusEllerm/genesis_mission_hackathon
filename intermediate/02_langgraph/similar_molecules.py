@@ -52,11 +52,11 @@ class MoleculeState:
 
 def get_llm() -> ChatOpenAI:
     return ChatOpenAI(
-        model=os.environ.get("LLM_MODEL", "gpt-6-luna"),
-        base_url=os.environ.get(
-            "OPENAI_BASE_URL", "https://mag.genesis.americansciencecloud.org/v1"
-        ),
-        api_key=os.environ.get("MAG_TOKEN"),
+        model=os.environ["LLM_MODEL"],
+        base_url=os.environ["OPENAI_BASE_URL"],
+        api_key=os.environ["AMSC_TOKEN"],
+        # The hackathon project only has a microsoft allocation on MAG.
+        default_headers={"X-AmSC-MAG-Provider": "microsoft"},
     )
 
 
@@ -91,7 +91,7 @@ def compute_qed(molecules: dict) -> list[dict]:
 
 
 def propose(state: MoleculeState) -> dict:
-    llm = get_llm().with_structured_output(Proposal, method="function_calling")
+    llm = get_llm().with_structured_output(Proposal, method="json_schema")
     proposal = llm.invoke(
         [
             SystemMessage(
