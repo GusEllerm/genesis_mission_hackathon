@@ -70,20 +70,20 @@ Each script runs Wordle agents. The agents use the Claude Agent SDK, and Academy
 
 | Script | Pattern | Agents |
 |---|---|---|
-| `run-06_1.py` | **Independent.** Each agent plays alone. | 2 `WordleAgent` |
-| `run-06_2.py` | **Peers.** The agents share what they learn on a blackboard. | 2 `WordleAgent` |
-| `run-06_3.py` | **Coordinator and sub-agents.** The sub-agents test strategies on a cheap simulator. Then the coordinator plays the real game one time with the best strategy. | 1 `CoordinatorAgent` and 3 `StrategyAgent` |
+| `1_independent.py` | **Independent.** Each agent plays alone. | 2 `WordleAgent` |
+| `2_message_board.py` | **Peers.** The agents share what they learn on a blackboard. | 2 `WordleAgent` |
+| `3_multi_strategy.py` | **Coordinator and sub-agents.** The sub-agents test strategies on a cheap simulator. Then the coordinator plays the real game one time with the best strategy. | 1 `CoordinatorAgent` and 3 `StrategyAgent` |
 
 ```bash
 export ANTHROPIC_AUTH_TOKEN=$AMSC_TOKEN
 export ANTHROPIC_BASE_URL=https://mag.genesis.americansciencecloud.org
-uv run --with claude-agent-sdk python advanced/3_scaling_agents/run-06_1.py
+uv run python advanced/3_scaling_agents/1_independent.py
 ```
 
-`--with claude-agent-sdk` adds the Claude Agent SDK for this run. The SDK includes the Claude Code CLI, so you do not install the CLI.
+`uv sync` installs the Claude Agent SDK. The SDK includes the Claude Code CLI, so you do not install the CLI.
 
 At the end, each script shows the answer from each agent and the true target word.
 
 These scripts use `LocalExchangeFactory`, so all agents run in one process on your computer. To run agents on an HPC system, use `HttpExchangeFactory` and a Globus Compute executor, as in [intermediate Module 3](../intermediate/03_academy/README.md).
 
-**Challenge:** In `run-06_2.py`, change `range(2)` to `range(4)`. Do more peers find the word in fewer guesses?
+**Challenge:** In `2_message_board.py`, change `range(2)` to `range(4)`. Do more peers find the word in fewer guesses?
