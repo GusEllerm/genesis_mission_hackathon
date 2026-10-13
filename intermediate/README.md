@@ -15,7 +15,7 @@ Each module uses the result of the previous module. Install the repo first with 
 Presented: Kyle Chard
 
 - [Module 1: Tool calling with Globus Compute](../advanced/1_tool_calling/README.md). An LLM on the MAG calls Python tools, for example a prime count or a molecular energy. A wrapper sends each tool call to a remote endpoint with Globus Compute.
-- [Module 2: Agent tool calling](../advanced/2_agent_tool_calling/README.md). This module is not written yet.
+- [Module 2: Agent tool calling](../advanced/2_agent_tool_calling/README.md). A coding agent, Pi with the Globus Harness profile, runs in a Docker container. It uses its built-in tools and the hpc-bridge MCP tools to do work on an HPC system.
 - [Module 3: Scaling agents with Academy](../advanced/3_scaling_agents/README.md). Many Claude Agent SDK agents play Wordle as Academy agents. The three scripts go from independent agents (`1_independent.py`), to agents that share hints on a blackboard (`2_message_board.py`), to a coordinator that sends strategies to worker agents (`3_multi_strategy.py`).
 
 
