@@ -40,7 +40,9 @@ In the first example, you give the molecule. In this example, the agent selects 
 
 Prompt:
 
-`On Aurora, use RDKit to calculate QED for aspirin and five similar molecules that you choose. Rank them and explain which change improved drug-likeness the most.`
+```
+On Aurora, use RDKit to calculate QED for aspirin and five similar molecules that you choose. Rank them and explain which change improved drug-likeness the most.
+```
 
 The agent:
 
