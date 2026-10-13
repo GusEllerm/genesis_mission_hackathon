@@ -16,7 +16,7 @@ Presented: Kyle Chard
 
 - [Module 1: Tool calling with Globus Compute](../advanced/1_tool_calling/README.md). An LLM on the MAG calls Python tools, for example a prime count or a molecular energy. A wrapper sends each tool call to a remote endpoint with Globus Compute.
 - [Module 2: Agent tool calling](../advanced/2_agent_tool_calling/README.md). This module is not written yet.
-- [Module 3: Scaling agents with Academy](../advanced/3_scaling_agents/README.md). Many Claude Agent SDK agents play Wordle as Academy agents. The three scripts go from independent agents (`run-06_1.py`), to agents that share hints on a blackboard (`run-06_2.py`), to a coordinator that sends strategies to worker agents (`run-06_3.py`).
+- [Module 3: Scaling agents with Academy](../advanced/3_scaling_agents/README.md). Many Claude Agent SDK agents play Wordle as Academy agents. The three scripts go from independent agents (`1_independent.py`), to agents that share hints on a blackboard (`2_message_board.py`), to a coordinator that sends strategies to worker agents (`3_multi_strategy.py`).
 
 
 # Getting Started
